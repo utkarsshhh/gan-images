@@ -30,3 +30,79 @@ class Generator(nn.Module):
             self.make_gen_layer(hidden_dim,im_chan,kernel_size = 4,final_layer = True)
         )
     def make_gen_layer(self,input_channels,output_channels,kernel_size=3,stride=2,final_layer = False):
+        '''
+
+        This function defines one layer in the sequential generator block. It includes a
+        transposed convolutional layer, batch normalization and ReLU activation.
+
+        Inputs:
+        input_channels: The number of channels of the input feature
+        output_channels: The number of channels the output feature should have
+        kernel_size: the size of the convolutional filters (kernel_size,kernel_size)
+        stride: the covolutional stride
+        final_layer: a boolean value, True for the final layer of the network,otherwise false
+
+        Output:
+        returns a single deconvolution layer for the network
+        '''
+
+        if not final_layer:
+            return nn.Sequential(
+                nn.ConvTranspose2d(input_channels,output_channels,kernel_size=kernel_size,stride=stride),
+                nn.BatchNorm2d(output_channels),
+                nn.ReLU(inplace=True)
+            )
+        elif final_layer:
+            return  nn.Sequential(
+                nn.ConvTranspose2d(input_channels,output_channels,kernel_size=kernel_size,stride=stride),
+                nn.Tanh()
+            )
+
+    def unsqueeze_noise(self,noise):
+        '''
+
+        This function given a noise tensor returns a copy the vector with width and height = 1
+        and channels = z_dim
+
+        Inputs:
+        noise: a noise tensor with dimensions (n_samples,z_dim)
+
+        Output:
+        returns a reshaped copy of the noise tensor
+        '''
+        return noise.view(len(noise),self.z_dim,1,1)
+
+    def forward (self,noise):
+        '''
+
+        This function completes a forward pass of the generator. Given a noise tensor,
+        returns generated images
+
+        Inputs:
+        noise: a noise tensor with dimensions (n_samples,z_dim)
+
+        Output:
+        returns fake images generated from the generated from the generator from the noise
+        '''
+        x = self.unsqueeze_noise(noise)
+        return self.gen(x)
+
+def generate_noise(n_samples, z_dim, device = 'cpu'):
+    '''
+
+    Function for creating random noise tensor with dimension (n_samples,z_dim)
+    creates a tensor of that shape filled with random numbers from normal distribution
+
+    Inputs:
+    n_samples: a scaler, the number of images to be generated
+    z_dim: a scaler, the length of each noise vector
+    device: the device type to be used for computation
+
+    Output:
+    returns a noise tensor based on the input scalers
+    '''
+
+    return torch.randn(n_samples,z_dim,device = device)
+
+
+
